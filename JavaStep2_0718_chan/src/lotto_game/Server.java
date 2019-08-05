@@ -20,7 +20,7 @@ public class Server {
 	Server(){
 		try {
 			serverSS = new ServerSocket();
-			serverSS.bind(new InetSocketAddress("10.0.0.54",8888));
+			serverSS.bind(new InetSocketAddress("127.0.0.1",8888));
 			InetAddress ip = serverSS.getInetAddress();
 			System.out.println(ip);
 			

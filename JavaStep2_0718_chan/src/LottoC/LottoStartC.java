@@ -9,7 +9,7 @@ public class LottoStartC {
 	LottoStartC() {
 	
 		try {
-			client = new Socket("10.0.0.54", 8888);
+			client = new Socket("127.0.0.1", 8888);
 			new WithServerLottoC(client);
 		} catch (Exception e) {
 			e.printStackTrace();
