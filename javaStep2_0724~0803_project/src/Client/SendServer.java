@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 import Function.data;
+import GUI.ADM;
 
 public class SendServer {
 	Socket s;
@@ -17,19 +18,23 @@ public class SendServer {
 	private OutputStream os;
 	private ObjectInputStream ois;
 	Scanner in = new Scanner(System.in);
+	ADM a;
 	String imsi;
 
 	SendServer(Socket s) {
 		this.s = s;
+		a = ADM.getInstence();
+		a.start(this);
 
 		try {
-			
+
 			os = s.getOutputStream();
 			is = s.getInputStream();
-		    receiveData();
+			receiveData();
+
 //			sendData1();
 //			receiveDataO();
-			sendData();
+//			sendData();
 //			send();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -40,71 +45,55 @@ public class SendServer {
 	private void sendData() {
 		try {
 			String imsi1 = null;
-			imsi1 = "신성이엔지";
+			imsi1 = "삼성전자";
 			os.write(imsi1.getBytes());
-			receiveDataO(true);
-			send();
+			while (true) {
+				imsi1 = in.nextLine();
+				os.write(imsi1.getBytes());
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 	}
-	
-	private void send() {
+
+	public void send(String msg) {
 		new Thread(new Runnable() {
-			
+
 			@Override
 			public void run() {
-				while(true) {
-					try {
-						
-						imsi = in.nextLine();
-						os.write(imsi.getBytes());
-					
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+
+				try {
+
+					os.write(msg.getBytes());
+
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
+
 			}
 		}).start();
 	}
-	
-	private void receiveDataO(boolean frag) {
+
+	private void receiveDataO(int port) {
 		new Thread(new Runnable() {
 
 			@Override
 			public void run() {
 
-				
 				try {
-					Socket s1 = new Socket("10.0.0.51",8881);
+					Socket s1 = new Socket("10.0.0.51", port);
 					InputStream i1 = s1.getInputStream();
-				
-					while(frag) {
+
+					while (true) {
 						ois = new ObjectInputStream(i1);
 						data d = null;
 						d = (data) ois.readObject();
-						ArrayList<String> broker = new ArrayList<>();
-						int[][]chart;
-						if((ArrayList<String>) d.getBroker()!=null) {
-							broker = (ArrayList<String>) d.getBroker();
-						System.out.println("============================");
-						for (int i = 0; i < broker.size(); i++) {
-							System.out.println(broker.get(i));
-						}
-						System.out.println("============================");
-						}else {
-							chart=(int[][])d.getChart();
-							for (int i = chart.length - 1; i > -1; i--) {
-								for (int z = 0; z <= 287; z++) {
-									System.out.print(chart[i][z]);
-								}
-								System.out.println();
-							}
-						}
-						
+						a.sendB(d);
+						a.sendC(d);
+
 					}
 				} catch (ClassNotFoundException e) {
 					// TODO Auto-generated catch block
@@ -124,13 +113,21 @@ public class SendServer {
 			@Override
 			public void run() {
 				try {
+
 					while (true) {
 						byte[] buff = new byte[1024];
 						is.read(buff);
 						imsi = new String(buff).trim();
-						System.out.println(imsi);
+						if ((imsi.charAt(0) + "").equals("@")) {
+							String portS = imsi.substring(1);
+							int port = Integer.parseInt(portS);
+							receiveDataO(port);
+						} else {
+							a.sendG(imsi);
+						}
 					}
-				} catch(SocketException e) {
+
+				} catch (SocketException e) {
 					closeall();
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
@@ -142,7 +139,7 @@ public class SendServer {
 		}).start();
 
 	}
-	
+
 	private void closeall() {
 		try {
 			System.out.println("close");

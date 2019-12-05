@@ -8,8 +8,36 @@ public class data implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	ArrayList<String> broker;
-	int[][] chart;
+	private ArrayList<String> broker;
+	private int[][] chart;
+	private String event;
+	private int row;
+	private int centerP;
+	
+	
+	public int getCenterP() {
+		return centerP;
+	}
+
+	public void setCenterP(int centerP) {
+		this.centerP = centerP;
+	}
+
+	public int getRow() {
+		return row;
+	}
+
+	public void setRow(int row) {
+		this.row = row;
+	}
+
+	public String getevent() {
+		return event;
+	}
+
+	public void setevent(String event) {
+		this.event = event;
+	}
 
 	public int[][] getChart() {
 		return chart;

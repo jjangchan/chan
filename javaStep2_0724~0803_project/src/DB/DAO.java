@@ -346,11 +346,12 @@ public class DAO {
 		return cnt;
 	}
 	
-	public String serchM(String chk) {
+	public String serchM(String chk,int sing) {
 		Connection conn = getConnection();
 		PreparedStatement ppst = null;
 		ResultSet rs = null;
 		String id = null;
+		String pwd = null;
 
 		try {
 			// 쿼리 작성단계
@@ -362,9 +363,9 @@ public class DAO {
 
 			// 쿼리 결과가 있는가?
 			if (rs.next()) {
-				id = null;
 				do {
 					id= rs.getString("id");
+					pwd = rs.getString("pwd");
 				} while (rs.next());
 
 			}
@@ -383,29 +384,33 @@ public class DAO {
 				System.out.println("connection close error");
 			}
 		}
-		return id;
+		if(sing==1) {
+			return id;
+		}else {
+			return pwd;
+		}
 	}
 	
 
-	public String serchBI(String chk) {
+	public String serchBI(String id,String event) {
 		Connection conn = getConnection();
 		PreparedStatement ppst = null;
 		ResultSet rs = null;
-		String id = null;
+		String chk = null;
 
 		try {
 			// 쿼리 작성단계
-			ppst = conn.prepareStatement("select * from balance where id =?");
+			ppst = conn.prepareStatement("select * from balance where id =? and event =?");
 			// 쿼리 수행단계
-			ppst.setString(1, chk);
+			ppst.setString(1, id);
+			ppst.setString(2, event);
 			ppst.executeUpdate();
 			rs = ppst.executeQuery();
 
 			// 쿼리 결과가 있는가?
 			if (rs.next()) {
-				id = null;
 				do {
-					id= rs.getString("event");
+					chk = rs.getString("event");
 				} while (rs.next());
 
 			}
@@ -424,7 +429,7 @@ public class DAO {
 				System.out.println("connection close error");
 			}
 		}
-		return id;
+		return chk;
 	}
 	
 	public int serchB(String id,String event,int chk) {
@@ -525,6 +530,48 @@ public class DAO {
     	}
     	return BalanDTOList;
     }
+    
+    public ArrayList<serverDTO> getListS() {
+    	Connection conn = getConnection();
+    	PreparedStatement ppst = null;
+    	ResultSet rs = null;
+    	ArrayList<serverDTO> serverDTOList = null;
+    	System.out.println("dsads");
+    	
+    	try {
+    		//���� �ۼ��ܰ�
+    		ppst = conn.prepareStatement("select * from server");
+    	    //���� ����ܰ�
+    		rs = ppst.executeQuery();
+    		
+    		//���� ����� �ִ°�?
+    		if(rs.next()) {
+    			serverDTOList = new ArrayList<serverDTO>();
+    			
+    			do {
+    				serverDTO dto = new serverDTO();
+    				dto.setEvent(rs.getString("event"));
+    				dto.setPort(rs.getInt("port"));
+    			
+    				serverDTOList.add(dto);
+    			}while(rs.next());
+    		}
+    		
+    	}catch(Exception e) {
+    		System.out.println("SQL Error123123123");
+    	
+    	}finally {
+    		try {
+    			if(ppst != null) ppst.close();
+    			if(rs != null  ) rs.close();
+    			if(conn != null) conn.close();
+    		} catch(Exception e) {
+    			System.out.println("connection close error");
+    		}
+    	}
+    	return serverDTOList;
+    }
+    
     
 	public boolean procS(StockDTO dto) {
 		Connection conn = getConnection();

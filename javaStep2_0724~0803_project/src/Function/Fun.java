@@ -7,7 +7,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Random;
 
-import DB.BalanDTO;
 import DB.DAO;
 import DB.EstockDTO;
 import Server.SendClient;
@@ -19,10 +18,10 @@ public class Fun extends Thread {
 	private int cnt1 = 0;
 
 	private int C1 = 10;
-	private int C11 = 10;
+	private int C11 = C1;
 	private int CT = C1 + 1 + C1;
 
-	private int[][] chart = new int[CT][288];
+	private int[][] chart = new int[CT][500];
 	private String stockN;
 	private ArrayList<PriceO> tc = new ArrayList<>();
 	private Random r = new Random();
@@ -30,14 +29,20 @@ public class Fun extends Thread {
 	private int center1 = 0;
 	private int centerN = 0;
 	private int C2 = 0;
-	
+
 	private DAO dao;
 	private ArrayList<String> totalID = new ArrayList<>();
 	private ArrayList<String> broker;
 	private ArrayList<Socket> socketT = new ArrayList<>();
 	private ArrayList<SendClient> scT = new ArrayList<>();
 	private ArrayList<SendClient> scB = new ArrayList<>();
-	
+	private ArrayList<SendClient> scTT = new ArrayList<>();
+
+	public void setscTT(SendClient sc) {
+		scTT.add(sc);
+		goinfo();
+	}
+
 	public int centerP() {
 		int price = tc.get(centerN).getPrice();
 		return price;
@@ -67,6 +72,7 @@ public class Fun extends Thread {
 	Fun(String stockN) {
 		this.stockN = stockN;
 		dao = DAO.getInstence();
+		System.out.println(stockN);
 	}
 
 	public void setP() {
@@ -93,7 +99,7 @@ public class Fun extends Thread {
 	public void center() {
 		int setcnt = 0;
 		int setA = 0;
-		chart[C1][C2] = 2;
+		chart[C1][C2] = 4;
 		boolean frag = true;
 		// 자동 세팅 값, 객체 생성
 
@@ -101,6 +107,7 @@ public class Fun extends Thread {
 		while (frag) {
 			int ren = r.nextInt(3) + 1;
 			double a = (((float) (setcnt * cnt) / (float) (center)) - 1) * 100;
+			double m = (float) (center * a) / (float) 100;
 			if (Math.round(a * 100) / 100.0 > 30.00) {
 				frag = false;
 				break;
@@ -110,6 +117,8 @@ public class Fun extends Thread {
 				priceT = new PriceO(this);
 				tc.add(priceT);
 				tc.get(setA).setPrice(cnt1 - cnt);
+				tc.get(setA).setYield(Math.round(a * 100) / 100.0 + "%");
+				tc.get(setA).setMeny(Math.round(m) + "원");
 
 				for (int i = 0; i < 1; i++) {
 					int imsi = dao.serchS(tc.get(setA).getPrice(), stockN);
@@ -124,9 +133,8 @@ public class Fun extends Thread {
 					}
 				}
 
-				tc.get(setA).setYield(Math.round(a * 100) / 100.0 + "%");
 				System.out.println(setA + 1 + "/ 가격 : " + tc.get(setA).getPrice() + " / 수량 : " + tc.get(setA).getCnt()
-						+ " / 수익률 :" + tc.get(setA).getYield());
+						+ " / 수익률 :" + tc.get(setA).getYield() + " / 수익 :" + tc.get(setA).getMeny());
 				if (Math.round(a * 100) / 100.0 == 0) {
 					centerN = setA;
 					center1 = tc.get(centerN).getPrice();
@@ -144,11 +152,14 @@ public class Fun extends Thread {
 				tc.get(i).setS();
 			}
 		}
-		 auto1();
-		auto3();
-		auto2();
-		auto4();
+		auto1();// 시간,종가 설정 기능
+		auto3();// 최우선 매도 호가 auto 기능,sing2()호출
+		auto2();// 최우선 매수 호가 auto 기능,sing()호출
+		auto4();// 최우선 호가를 제외한 그 외 auto기능,sing4,3()호출
+
 	}
+
+	// client sell
 	public void sell(int price, int cnt, String id, SendClient sc) {
 		if (scT.size() > 0) {
 			if (!scT.contains(sc)) {
@@ -158,7 +169,7 @@ public class Fun extends Thread {
 			scT.add(sc);
 		}
 		new Thread(new Runnable() {
-			
+
 			@Override
 			public void run() {
 				if (tc.get(centerN + 1).getPrice() < price) {
@@ -174,14 +185,15 @@ public class Fun extends Thread {
 					if (tc.get(centerN).sing(cnt, 1, id, sc) == 1) {
 						centerN--;
 						sendB2();
+						goinfo();
 						if (C1 > C11) {
 							chart[C1][C2] = 1;
 							C1 = C1 - 1;
 
 						} else {
-							if (C1 == C11) {
-								chart[C1][C2] = 3;
-							}
+//							if (C1 == C11) {
+//								chart[C1][C2] = 3;
+//							}
 							C1 = C1 - 1;
 							chart[C1][C2] = 3;
 						}
@@ -194,29 +206,30 @@ public class Fun extends Thread {
 						}
 					}
 				}
-				
-				System.out.println("----------------------------------");
+
+				// System.out.println("----------------------------------");
 				for (int i = centerN + 10; i > centerN - 10; i--) {
 					if (i == centerN) {
-						System.out.println("가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :"
-								+ tc.get(centerN).getCnt());
-						broker.add("가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :"
-								+ tc.get(centerN).getCnt());
+//						System.out.println("가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :"
+//								+ tc.get(centerN).getCnt());
+						broker.add("가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :" + tc.get(centerN).getCnt());
 					} else if (i > centerN) {
-						System.out.println("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" + tc.get(i).getCnt());
+//						System.out.println("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" + tc.get(i).getCnt());
 						broker.add("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" + tc.get(i).getCnt());
 					} else if (i < centerN) {
-						System.out.println("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" + tc.get(i).getCnt());
+						// System.out.println("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" +
+						// tc.get(i).getCnt());
 						broker.add("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" + tc.get(i).getCnt());
 					}
 				}
-				System.out.println("----------------------------------");
-				sendData(broker,null);
-				
+				// System.out.println("----------------------------------");
+				sendData(broker);
+
 			}
 		}).start();
 	}
 
+	// client buy
 	public void buysing(int price, int cnt, String id, SendClient sc) {
 		if (scT.size() > 0) {
 			if (!scT.contains(sc)) {
@@ -240,10 +253,11 @@ public class Fun extends Thread {
 					if (tc.get(centerN + 1).sing2(cnt, 2, id, sc) == 1) {
 						centerN++;
 						sendB2();
+						goinfo();
 						if (C1 >= C11) {
-							if (C1 == C11) {
-								chart[C1][C2] = 2;
-							}
+//							if (C1 == C11) {
+//								chart[C1][C2] = 2;
+//							}
 							C1 = C1 + 1;
 							chart[C1][C2] = 2;
 						} else {
@@ -261,29 +275,31 @@ public class Fun extends Thread {
 						}
 					}
 				}
-				
-				System.out.println("----------------------------------");
+
+//				System.out.println("----------------------------------");
 				for (int i = centerN + 10; i > centerN - 10; i--) {
 					if (i == centerN) {
-						System.out.println("가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :"
-								+ tc.get(centerN).getCnt());
-						broker.add("가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :"
-								+ tc.get(centerN).getCnt());
+//						System.out.println("가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :"
+//								+ tc.get(centerN).getCnt());
+						broker.add("가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :" + tc.get(centerN).getCnt());
 					} else if (i > centerN) {
-						System.out.println("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" + tc.get(i).getCnt());
+						// System.out.println("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" +
+						// tc.get(i).getCnt());
 						broker.add("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" + tc.get(i).getCnt());
 					} else if (i < centerN) {
-						System.out.println("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" + tc.get(i).getCnt());
+						// System.out.println("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" +
+						// tc.get(i).getCnt());
 						broker.add("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" + tc.get(i).getCnt());
 					}
 				}
-				System.out.println("----------------------------------");
-				sendData(broker,null);
+				// System.out.println("----------------------------------");
+				sendData(broker);
 
 			}
 		}).start();
 	}
 
+	// 그 외 호가
 	private void auto4() {
 		new Thread(new Runnable() {
 
@@ -303,29 +319,31 @@ public class Fun extends Thread {
 							rennum2 = rennum2 + (centerN - 9);
 							tc.get(rennum1).sing3(es, 0, "auto", null);
 
-							tc.get(rennum2).sing4(es, 0, "auto",null);
+							tc.get(rennum2).sing4(es, 0, "auto", null);
 
 						}
 						// 차트,호가 출력부
 
-						System.out.println("----------------------------------");
+						// System.out.println("----------------------------------");
 						for (int i = centerN + 10; i > centerN - 10; i--) {
 							if (i == centerN) {
-								System.out.println("가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :"
-										+ tc.get(centerN).getCnt());
+								// System.out.println("가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :"
+								// + tc.get(centerN).getCnt());
 								broker.add("가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :"
 										+ tc.get(centerN).getCnt());
 							} else if (i > centerN) {
-								System.out.println("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" + tc.get(i).getCnt());
+								// System.out.println("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" +
+								// tc.get(i).getCnt());
 								broker.add("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" + tc.get(i).getCnt());
 							} else if (i < centerN) {
-								System.out.println("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" + tc.get(i).getCnt());
+								// System.out.println("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" +
+								// tc.get(i).getCnt());
 								broker.add("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" + tc.get(i).getCnt());
 							}
 						}
-						System.out.println("----------------------------------");
+						// System.out.println("----------------------------------");
 
-						sendData(broker,null);
+						sendData(broker);
 						// sendData1();
 
 						Thread.sleep(time + 2000);
@@ -339,6 +357,7 @@ public class Fun extends Thread {
 
 	}
 
+	// 최우선 매도 호가
 	private void auto3() {
 		new Thread(new Runnable() {
 
@@ -352,11 +371,14 @@ public class Fun extends Thread {
 						es = es - 1;
 						if (tc.get(centerN + 1).sing2(es, 0, "auto", null) == 1) {
 							centerN++;
+							// 주주에게 종목 변동 값 알림
 							sendB2();
+							// 종목 변동 값 알림
+							goinfo();
 							if (C1 >= C11) {
-								if (C1 == C11) {
-									chart[C1][C2] = 2;
-								}
+//								if (C1 == C11) {
+//									chart[C1][C2] = 2;
+//								}
 								C1 = C1 + 1;
 								chart[C1][C2] = 2;
 							} else {
@@ -366,24 +388,26 @@ public class Fun extends Thread {
 						}
 						// 차트,호가 출력부
 
-						System.out.println("----------------------------------");
+						// System.out.println("----------------------------------");
 						for (int i = centerN + 10; i > centerN - 10; i--) {
 							if (i == centerN) {
-								System.out.println("가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :"
-										+ tc.get(centerN).getCnt());
+								// System.out.println("가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :"
+								// + tc.get(centerN).getCnt());
 								broker.add("가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :"
 										+ tc.get(centerN).getCnt());
 							} else if (i > centerN) {
-								System.out.println("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" + tc.get(i).getCnt());
+								// System.out.println("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" +
+								// tc.get(i).getCnt());
 								broker.add("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" + tc.get(i).getCnt());
 							} else if (i < centerN) {
-								System.out.println("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" + tc.get(i).getCnt());
+								// System.out.println("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" +
+								// tc.get(i).getCnt());
 								broker.add("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" + tc.get(i).getCnt());
 							}
 						}
-						System.out.println("----------------------------------");
+						// System.out.println("----------------------------------");
 
-						sendData(broker,null);
+						sendData(broker);
 						// sendData1();
 
 						Thread.sleep(2000 + time);
@@ -396,6 +420,7 @@ public class Fun extends Thread {
 		}).start();
 	}
 
+	// 최우선 매수 호가
 	private void auto2() {
 		new Thread(new Runnable() {
 
@@ -410,38 +435,41 @@ public class Fun extends Thread {
 						if (tc.get(centerN).sing(es, 0, "auto", null) == 1) {
 							centerN--;
 							sendB2();
+							goinfo();
 							if (C1 > C11) {
 								chart[C1][C2] = 1;
 								C1 = C1 - 1;
 
 							} else {
-								if (C1 == C11) {
-									chart[C1][C2] = 3;
-								}
+//								if (C1 == C11) {
+//									chart[C1][C2] = 3;
+//								}
 								C1 = C1 - 1;
 								chart[C1][C2] = 3;
 							}
 						}
 						// 차트,호가 출력부
 
-						System.out.println("----------------------------------");
+						// System.out.println("----------------------------------");
 						for (int i = centerN + 10; i > centerN - 10; i--) {
 							if (i == centerN) {
-								System.out.println("가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :"
-										+ tc.get(centerN).getCnt());
+								// System.out.println("가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :"
+								// + tc.get(centerN).getCnt());
 								broker.add("가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :"
 										+ tc.get(centerN).getCnt());
 							} else if (i > centerN) {
-								System.out.println("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" + tc.get(i).getCnt());
+								// System.out.println("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" +
+								// tc.get(i).getCnt());
 								broker.add("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" + tc.get(i).getCnt());
 							} else if (i < centerN) {
-								System.out.println("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" + tc.get(i).getCnt());
+								// System.out.println("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" +
+								// tc.get(i).getCnt());
 								broker.add("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" + tc.get(i).getCnt());
 							}
 						}
-						System.out.println("----------------------------------");
+						// System.out.println("----------------------------------");
 
-						sendData(broker,null);
+						sendData(broker);
 						// sendData1();
 
 						Thread.sleep(2000 + time);
@@ -454,8 +482,8 @@ public class Fun extends Thread {
 		}).start();
 	}
 
+	// time, 차트형태 설정,종가 설정
 	public void auto1() {
-
 		new Thread(new Runnable() {
 
 			@Override
@@ -471,16 +499,16 @@ public class Fun extends Thread {
 						if (timecnt % 4 == 0) {
 							C2++;
 							chart[C1][C2] = chart[C1][C2 - 1];
-							chart[C1][C2] = 2;
+							chart[C1][C2] = 4;
 							C11 = C1;
-						} else if (timecnt == 55) {
+						} else if (timecnt == 7200) {
 							int centerL = 0;
 							int centerH = 0;
 							ArrayList<Integer> H = new ArrayList<>();
 							ArrayList<Integer> L = new ArrayList<>();
 							int cul = chart[0].length;
 
-	                        //시장 종류후 업데이트
+							// 시장 종류후 업데이트
 							update();
 
 							// DB 개별 종목 데이터값 저장.
@@ -539,14 +567,6 @@ public class Fun extends Thread {
 							}
 
 						}
-						
-						for (int i = chart.length - 1; i > -1; i--) {
-							for (int z = 0; z <= C2; z++) {
-								System.out.print(chart[i][z]);
-							}
-							System.out.println();
-						}
-						sendData(null,chart);
 						// sendData1();
 
 						Thread.sleep(3000);
@@ -560,75 +580,62 @@ public class Fun extends Thread {
 		}).start();
 	}
 
-	private void sendData(ArrayList<String> broker1,int[][]chart) {
+	// 직렬화 전송
+	private void sendData(ArrayList<String> broker1) {
+		synchronized (this) {
+			try {
+				OutputStream os;
+				ObjectOutputStream oos;
+				data d = new data();
+				d.setRow(C2);
+				d.setCenterP(C11);
+				d.setBroker(broker1);
+				d.setevent(stockN);
+				d.setChart(chart);
+				for (int i = 0; i < socketT.size(); i++) {
+					System.out.println("직렬화 전송 : "+socketT.get(i));
+					os = socketT.get(i).getOutputStream();
+					oos = new ObjectOutputStream(os);
+					oos.reset();
+					oos.writeObject(d);
+					oos.flush();
+
+				}
+
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+	}
+
+	public void sendData1() {
 		new Thread(new Runnable() {
 
 			@Override
 			public void run() {
-				try {
-					OutputStream os;
-					ObjectOutputStream oos;
-					data d = new data();
-					if(broker1 != null) {
-						d.setBroker(broker1);
-						for (int i = 0; i < socketT.size(); i++) {
-							os = socketT.get(i).getOutputStream();
-							oos = new ObjectOutputStream(os);
-							oos.reset();
-							oos.writeObject(d);
-							oos.flush();
-							
-						}
-					}else {
-						d.setChart(chart);
-						for (int i = 0; i < socketT.size(); i++) {
-							os = socketT.get(i).getOutputStream();
-							oos = new ObjectOutputStream(os);
-							oos.reset();
-							oos.writeObject(d);
-							oos.flush();
-							
-						}
+				broker = new ArrayList<>();
+				for (int i = centerN + 10; i > centerN - 10; i--) {
+					if (i == centerN) {
+						System.out.println(
+								"가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :" + tc.get(centerN).getCnt());
+						broker.add("가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :" + tc.get(centerN).getCnt());
+					} else if (i > centerN) {
+						System.out.println("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" + tc.get(i).getCnt());
+						broker.add("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" + tc.get(i).getCnt());
+					} else if (i < centerN) {
+						System.out.println("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" + tc.get(i).getCnt());
+						broker.add("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" + tc.get(i).getCnt());
 					}
-						
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
 				}
-
+				sendData(broker);
 			}
 		}).start();
 	}
-	
-	public void sendData1() {
-		synchronized (this) {
-			new Thread(new Runnable() {
-
-				@Override
-				public void run() {
-					broker = new ArrayList<>();
-					for (int i = centerN + 10; i > centerN - 10; i--) {
-						if (i == centerN) {
-							System.out.println(
-									"가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :" + tc.get(centerN).getCnt());
-							broker.add(
-									"가격(시장가) : " + tc.get(centerN).getPrice() + " / 매수수량 :" + tc.get(centerN).getCnt());
-						} else if (i > centerN) {
-							System.out.println("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" + tc.get(i).getCnt());
-							broker.add("가격 : " + tc.get(i).getPrice() + " / 매도수량 :" + tc.get(i).getCnt());
-						} else if (i < centerN) {
-							System.out.println("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" + tc.get(i).getCnt());
-							broker.add("가격 : " + tc.get(i).getPrice() + " / 매수수량 :" + tc.get(i).getCnt());
-						}
-					}
-					sendData(broker,null);
-				}
-			}).start();
-
-		}
-	}
 
 	public void socketchk(Socket s, String y) {
+		System.out.println(s + ":" + y + ":소켓 검사");
 		if ("y".equals(y)) {
 			socketT.add(s);
 		} else {
@@ -655,31 +662,31 @@ public class Fun extends Thread {
 		}
 
 	}
-	
+
 	private void update() {
 		new Thread(new Runnable() {
-			
+
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
-				for(int i=0; i<tc.size();i++) {
+				for (int i = 0; i < tc.size(); i++) {
 					tc.get(i).fluct();
-					if(tc.get(i).fluct()==0) {
+					if (tc.get(i).fluct() == 0) {
 						--i;
 						System.out.println("back");
 					}
 				}
-				
+
 			}
 		}).start();
 	}
-	
-	public void sendB(SendClient sc,String msg,String id) {
-		
-		String stock = dao.serchBI(id);
-		if(stock.equals(stockN)) {
+
+	public void sendB(SendClient sc, String msg, String id) {
+
+		String stock = dao.serchBI(id, stockN);
+		if (stock.equals(stockN)) {
 			System.out.println(msg);
-			if(msg.equals("잔고")) {
+			if (msg.equals("잔고 내역")) {
 				if (scB.size() > 0) {
 					if (!scB.contains(sc)) {
 						scB.add(sc);
@@ -690,9 +697,9 @@ public class Fun extends Thread {
 					totalID.add(id);
 				}
 				sendB2();
-			}else {
-				for(int i=0;i<scB.size();i++) {
-					if(scB.get(i).equals(sc)) {
+			} else {
+				for (int i = 0; i < scB.size(); i++) {
+					if (scB.get(i).equals(sc)) {
 						scB.remove(i);
 						totalID.remove(i);
 						break;
@@ -701,28 +708,52 @@ public class Fun extends Thread {
 			}
 		}
 	}
-	
+
 	private void sendB2() {
 		new Thread(new Runnable() {
-			
+
 			@Override
 			public void run() {
-				for(int i=0; i<scB.size();i++) {
+				for (int i = 0; i < scB.size(); i++) {
 					int buying = dao.serchB(totalID.get(i), stockN, 1);
 					int cnt = dao.serchB(totalID.get(i), stockN, 2);
-					double yield = tc.get(0).lastY(buying);
-					double m = (float)(buying*yield)/(float)100;
-					String bs = "매수 단가  :"+buying;
-					String cs = "수량  : "+cnt;
-					String ys = "수익률  : "+yield+"%";
-					String ms = "수익 : "+Math.floor(m)+"원";
-					String nows = "현재가 :"+tc.get(centerN).getPrice();
-					String sendmsg = nows+" | "+bs+" | "+cs+" | "+ys+" | "+ms+" |";
-					scB.get(i).sendMsg(sendmsg);
+					if (cnt != 0) {
+						double yield = tc.get(0).lastY(buying);
+						double m = (float) (buying * yield) / (float) 100;
+						String bs = "매수 단가  :" + buying;
+						String cs = "수량  : " + cnt;
+						String ys = "수익률  : " + yield + "%";
+						String ms = "수익 : " + Math.round(m) + "원";
+						String nows = "현재가 :" + tc.get(centerN).getPrice();
+						String sendmsg = "##" + stockN + " | " + nows + " | " + bs + " | " + cs + " | " + ys + " | "
+								+ ms + " |" + "*";
+						scB.get(i).sendMsg(sendmsg);
+					}
 				}
-				
+			}
+
+		}).start();
+	}
+
+	private void goinfo() {
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				if (scTT.size() != 0) {
+					String yield = tc.get(centerN).getYield();
+					String nows = "현재가 :" + tc.get(centerN).getPrice();
+					String meny = tc.get(centerN).getMeny();
+					String sendmsg = "!!" + stockN + " |      " + nows + "        |               " + yield + "/" + meny
+							+ " |*";
+					for (int i = 0; i < scTT.size(); i++) {
+						scTT.get(i).sendMsg(sendmsg);
+					}
+
+				}
+
 			}
 		}).start();
 	}
-	
+
 }

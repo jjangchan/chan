@@ -25,12 +25,11 @@ public class MainStart {
 	}
 	
 	public void event(){
-//		stockN.add("삼성전자");
+ //   	stockN.add("삼성전자");
 		stockN.add("신성이엔지");
 //		stockN.add("모나미");
 //		stockN.add("SK하이닉스");
 //		stockN.add("셀트리온");
-		
 		for(int i=0;i<stockN.size();i++) {
 			Fun go = new Fun(stockN.get(i));
 			cenF.add(go);

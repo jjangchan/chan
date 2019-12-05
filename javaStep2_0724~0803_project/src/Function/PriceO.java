@@ -15,6 +15,7 @@ public class PriceO {
 	private int cnt;
 	private double a;
 	private String yield;
+	private String meny;
 	private ArrayList<String> idB = new ArrayList<>();
 	private ArrayList<String> idS = new ArrayList<>();
 	private ArrayList<Integer> cntB = new ArrayList<>();
@@ -27,6 +28,12 @@ public class PriceO {
 	private Random r = new Random();
 	private DAO dao = DAO.getInstence();
 	
+	public String getMeny() {
+		return meny;
+	}
+	public void setMeny(String meny) {
+		this.meny = meny;
+	}
 	public int getPrice() {
 		return price;
 	}
@@ -142,14 +149,7 @@ public class PriceO {
 			} else if (es == -1) {
 				cnt = cnt - ren;
 				algo1(ren, id);
-//				if(price==1085) {
-//					System.out.println("size : "+cntS.size());
-//					for(int i=cntS.size()-1;i>=0;i--) {
-//						System.out.println("수량  : "+cntS.get(i));
-//					}
-//				}
 				if (cntB.size() != 0) {
-					System.out.println("물량 없음");
 					cntB.remove(0);
 					idB.remove(0);
 					
@@ -189,22 +189,9 @@ public class PriceO {
 				idB.add(id);
 			} else if(es == -1){
 				cnt = cnt - ren;
-				if(price==1025) {
-					System.out.println("size :"+cntB.size());
-					for(int i=0; i<cntB.size();i++) {
-						System.out.println("id :"+idB.get(i)+" / 수량  :"+cntB.get(i) );
-					}
-				}
 				algo2(ren,id);				
-				if(price==1025) {
-					System.out.println("size :"+cntB.size());
-					for(int i=0; i<cntB.size();i++) {
-						System.out.println("id :"+idB.get(i)+" / 수량  :"+cntB.get(i) );
-					}
-				}
 
 				if(cntS.size()!=0) {
-					System.out.println("물량 없음");
 					cntS.remove(0);
 					idS.remove(0);
 				
@@ -287,7 +274,6 @@ public class PriceO {
 						} else if (scT.get(i).getMyid().equals(id)) {
 							scT.get(i).sendMsg(r1 + "개 수량 매수 체결 완료");
 							setDB(id,r1,1);
-							System.out.println("1 : chk");
 						}
 					}
 				}else if(imsi==0) {
@@ -298,7 +284,6 @@ public class PriceO {
 						} else if (scT.get(i).getMyid().equals(id)) {
 							scT.get(i).sendMsg(r1 + "개 수량 매수 체결 완료");
 							setDB(id,r1,1);
-							System.out.println("2 : chk");
 						}
 					}
 					cntS.remove(chk);
@@ -312,7 +297,6 @@ public class PriceO {
 							} else if (scT.get(i).getMyid().equals(id)) {
 								scT.get(i).sendMsg(cntS.get(chk) + "개 수량 매수 체결 완료");
 								setDB(id,cntS.get(chk),1);
-								System.out.println("3 : chk");
 							}
 						}
 						cntS.remove(chk);
@@ -330,7 +314,6 @@ public class PriceO {
 									} else if (scT.get(i).getMyid().equals(id)) {
 										scT.get(i).sendMsg(imsi1 + "개 수량 매수 체결 완료");
 										setDB(id,imsi1,1);
-										System.out.println("4 : chk");
 									}
 								}
 								cntS.remove(chk);
@@ -343,7 +326,6 @@ public class PriceO {
 									} else if (scT.get(i).getMyid().equals(id)) {
 										scT.get(i).sendMsg(bs*-1 + "개 수량 매수 체결 완료");
 										setDB(id,bs*-1,1);
-										System.out.println("5 : chk");
 									}
 								}
 								cntS.set(chk, imsi);
@@ -366,7 +348,6 @@ public class PriceO {
 	private void algo2(int r2,String id) {
 		scT = t0.getScT();  //sever 객체  연동 하기
 		synchronized (this) {
-			System.out.println(r2+"<<랜덤숫자");
 			int chk=0;
 			int imsi=0;
 			if(cntB.size()!=0) {
@@ -380,7 +361,6 @@ public class PriceO {
 							setDB(idB.get(chk),r2,1);
 						} else if (scT.get(i).getMyid().equals(id)) {
 							scT.get(i).sendMsg(r2 + "개 수량 매도 체결 완료");
-							System.out.println("1 : chk");
 							setDB(id,r2,2);
 						}
 					}
@@ -391,7 +371,6 @@ public class PriceO {
 							setDB(idB.get(chk),r2,1);
 						} else if (scT.get(i).getMyid().equals(id)) {
 							scT.get(i).sendMsg(r2 + "개 수량 매도 체결 완료");
-							System.out.println("2 : chk");
 							setDB(id,r2,2);
 						}
 					}
@@ -399,16 +378,12 @@ public class PriceO {
 					cntB.remove(chk);
 				}else if(imsi<0){
 					while(imsi<0) {
-						System.out.println("chk1");
-						System.out.println(scT.size()+"<<scT size");
 						for (int i = 0; i < scT.size(); i++) {
-							System.out.println(scT.get(i).getMyid()+"//"+idB.get(chk));
 							if (scT.get(i).getMyid().equals(idB.get(chk))) {
 								scT.get(i).sendMsg(cntB.get(chk) + "개 수량 매수 체결 완료");
 								setDB(idB.get(chk),cntB.get(chk),1);
 							} else if (scT.get(i).getMyid().equals(id)) {
 								scT.get(i).sendMsg(cntB.get(chk) + "개 수량 매도 체결 완료");
-								System.out.println("3 : chk");
 								setDB(id,cntB.get(chk),2);
 							}
 						}
@@ -419,28 +394,24 @@ public class PriceO {
 							int bs = imsi;
 							imsi = imsi1 + imsi;
 							if(imsi==0) {
-								System.out.println("chk2");
 								for (int i = 0; i < scT.size(); i++) {
 									if (scT.get(i).getMyid().equals(idB.get(chk))) {
 										scT.get(i).sendMsg(imsi1 + "개 수량 매수 체결 완료");
 										setDB(idB.get(chk),imsi1,1);
 									} else if (scT.get(i).getMyid().equals(id)) {
 										scT.get(i).sendMsg(imsi1 + "개 수량 매도 체결 완료");
-										System.out.println("4 : chk");
 										setDB(id,imsi1,2);
 									}
 								}
 								cntB.remove(chk);
 								idB.remove(chk);
 							}else if(imsi>0){
-								System.out.println("chk3");
 								for (int i = 0; i < scT.size(); i++) {
 									if (scT.get(i).getMyid().equals(idB.get(chk))) {
 										scT.get(i).sendMsg(bs*-1 + "개 수량 매수 체결 완료");
 										setDB(idB.get(chk),bs*-1,1);
 									} else if (scT.get(i).getMyid().equals(id)) {
 										scT.get(i).sendMsg(bs*-1 + "개 수량 매도 체결 완료");
-										System.out.println("5 : chk");
 										setDB(id,bs*-1,2);
 									}
 								}
@@ -486,22 +457,21 @@ public class PriceO {
 				} else {
 					double d = (float)((price*cnt)+(buysum*cntsum))/(float)(cnt+cntsum);
 					double c = (float) d * lastY(d) / (float) 100;
-					dtoB.setBuying(Math.floor(d));
-					dtoB.setTotalC(Math.floor(c) + "원");
-					dtoB.setYield(lastY(Math.floor(d)) + "%");
+					dtoB.setBuying(Math.round(d));
+					dtoB.setTotalC(Math.round(c) + "원");
+					dtoB.setYield(lastY(Math.round(d)) + "%");
 					dtoB.setTotalM(cnt+cntsum);
 					dao.updateB(dtoB);
 				}
 			} else {
 				double d = (float)((price*(cntsum-cnt))+(buysum*cntsum))/(float)((cntsum-cnt)+cntsum);
 				double c = (float) d * lastY(d) / (float) 100;
-				dtoB.setBuying(Math.floor(d));
-				dtoB.setTotalC(Math.floor(c) + "원");
-				dtoB.setYield(lastY(Math.floor(d)) + "%");
+				dtoB.setBuying(Math.round(d));
+				dtoB.setTotalC(Math.round(c) + "원");
+				dtoB.setYield(lastY(Math.round(d)) + "%");
 				dtoB.setTotalM(cnt);
 				dtoB.setSell(price);
 				dao.procB(dtoB);
-				System.out.println("zzzz");
 			}
 		}
 	}
@@ -520,7 +490,7 @@ public class PriceO {
 						dtoB = new BalanDTO();
 						dtoB.setId(idT.get(i).getId());
 						dtoB.setEvent(t0.getStockN());
-						dtoB.setTotalC(Math.floor(c) + "원");
+						dtoB.setTotalC(Math.round(c) + "원");
 						dtoB.setYield(y + "%");
 						dao.updateB(dtoB);
 					}
@@ -529,7 +499,7 @@ public class PriceO {
 		}
 		return 1;
 	}
-	//시장가 에서 현재 적용되는 가격 객체 수익률 계산 매서드
+	//현재가 에서 현재 적용되는 가격 객체 수익률 계산 매서드
 	public double lastY(double chk) {
 		priceC= t0.centerP();
 		if(chk==-1) {
