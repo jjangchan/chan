@@ -3,7 +3,7 @@ package miniProject;
 import java.util.Random;
 
 public class horse extends Thread {
-	track mytrack = null;
+	track mytrack = null;    
 
 	public void setTrack(track t) {
 		this.mytrack = t;
